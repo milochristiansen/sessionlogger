@@ -38,6 +38,7 @@ import "os"
 import "io"
 import "log"
 import "time"
+import "errors"
 
 import "github.com/teris-io/shortid"
 
@@ -66,7 +67,7 @@ var ErrAlreadyInitalized = errors.New("Logger system was already initialized.")
 func InitalizeLogger(logdir string) error {
 	// This may only be set up once.
 	if loggerInitted {
-		return ErrLoggerAlreadyInitalized
+		return ErrAlreadyInitalized
 	}
 
 	if logdir != "" {
