@@ -52,7 +52,10 @@ var logIDService <-chan string
 
 // MustInitalizeLogger is just InitalizeLogger that panics on error.
 func MustInitalizeLogger(logdir string) {
-	panic("Logger initialization failed. *shrug* Guess I'll die.\n" + InitalizeLogger(logdir).Error())
+	err := InitalizeLogger(logdir)
+	if err != nil {
+		panic("Logger initialization failed. *shrug* Guess I'll die.\n" + err.Error())
+	}
 }
 
 var loggerInitted = false
