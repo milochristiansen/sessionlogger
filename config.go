@@ -40,13 +40,13 @@ const (
 // Stdout and Stderr and has all log levels enabled.
 //
 // Note that changes to the config will not effect loggers created before the changes were made.
-type LoggerConfig struct {
+type Config struct {
 	Disabled [3]bool      // Info, Warn, Err
 	Writers  [3]io.Writer // If nil, use the default for this level.
 }
 
 // Disable is a convenience method that makes a specific log level as disabled. Will panic if the level is invalid.
-func (lc *LoggerConfig) Disable(l logLevel) *LoggerConfig {
+func (lc *Config) Disable(l logLevel) *Config {
 	if l < 0 || l > 3 {
 		panic("Log level out of range. Use the constants dumdum.")
 	}
@@ -57,7 +57,7 @@ func (lc *LoggerConfig) Disable(l logLevel) *LoggerConfig {
 
 // Writer is a convenience method that combines all the given writers and uses them as the output for the
 // given log level.
-func (lc *LoggerConfig) Writer(l logLevel, w ...io.Writer) *LoggerConfig {
+func (lc *Config) Writer(l logLevel, w ...io.Writer) *Config {
 	if l < 0 || l > 3 {
 		panic("Log level out of range. Use the constants dumdum.")
 	}
@@ -74,7 +74,7 @@ var defaultWriters = []io.Writer{
 
 // GetWriter gets a writer for the given log level. No matter what, a valid writer will be
 // returned (assuming no invalid logger was manually set in the config).
-func (lc *LoggerConfig) GetWriter(l logLevel) io.Writer {
+func (lc *Config) GetWriter(l logLevel) io.Writer {
 	if l < 0 || l > 3 {
 		return os.Stdout
 	}

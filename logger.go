@@ -56,7 +56,7 @@ func init() {
 }
 
 // DefaultLoggerConfig is a simple global logger config that is used for NewMasterLogger and NewSessionLogger.
-var DefaultLoggerConfig = &LoggerConfig{}
+var DefaultConfig = &Config{}
 
 // CreateLogFile is a simple helper function for making log files. logdir should be a path to the directory you
 // want your log files to be placed in. If this path does not exist it will be created.
@@ -91,29 +91,29 @@ type Logger struct {
 
 // NewMasterLogger creates a new Logger without prefix or instance ID.
 func NewMasterLogger() *Logger {
-	return DefaultLoggerConfig.NewMasterLogger()
+	return DefaultConfig.NewMasterLogger()
 }
 
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func NewSessionLogger(endpoint string) *Logger {
-	return DefaultLoggerConfig.NewSessionLogger(endpoint)
+	return DefaultConfig.NewSessionLogger(endpoint)
 }
 
 // NewMasterLogger creates a new Logger without prefix or instance ID.
-func (lc *LoggerConfig) NewMasterLogger() *Logger {
+func (lc *Config) NewMasterLogger() *Logger {
 	return lc.newLogger("")
 }
 
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
-func (lc *LoggerConfig) NewSessionLogger(endpoint string) *Logger {
+func (lc *Config) NewSessionLogger(endpoint string) *Logger {
 	log := lc.newLogger("@" + endpoint + ":" + <-logIDService)
 	log.I.Println("")
 	return log
 }
 
-func (lc *LoggerConfig) newLogger(prefix string) *Logger {
+func (lc *Config) newLogger(prefix string) *Logger {
 	return &Logger{
 		I: log.New(lc.GetWriter(Info), "INFO"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
 		W: log.New(lc.GetWriter(Warn), "WARN"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
