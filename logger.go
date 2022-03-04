@@ -35,64 +35,14 @@ misrepresented as being the original software.
 package sessionlogger
 
 import "os"
-import "io"
 import "log"
 import "time"
-import "errors"
 
 import "github.com/teris-io/shortid"
 
-var (
-	infoLog  io.Writer
-	warnLog  io.Writer
-	errorLog io.Writer
-)
-
 var logIDService <-chan string
 
-// MustInitalizeLogger is just InitalizeLogger that panics on error.
-func MustInitalizeLogger(logdir string) {
-	err := InitalizeLogger(logdir)
-	if err != nil {
-		panic("Logger initialization failed. *shrug* Guess I'll die.\n" + err.Error())
-	}
-}
-
-var loggerInitted = false
-
-// ErrAlreadyInitalized is the error returned by InitalizeLogger if called more than once.
-var ErrAlreadyInitalized = errors.New("Logger system was already initialized.")
-
-// InitalizeLogger sets up the logging system (creates files, starts ID service, etc). logdir should
-// be a path to the directory you want your log files to be placed in. If this path does not exist it
-// will be created. If logdir is set to the empty string, no log file will be created and logging will
-// be only to stderr (error level) and stdout (info and warning levels).
-func InitalizeLogger(logdir string) error {
-	// This may only be set up once.
-	if loggerInitted {
-		return ErrAlreadyInitalized
-	}
-
-	if logdir != "" {
-		err := os.MkdirAll(logdir, 0775)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(logdir + "/" + time.Now().UTC().Format("m01-d02-t150405") + ".log")
-		if err != nil {
-			return err
-		}
-
-		infoLog = io.MultiWriter(f, os.Stdout)
-		warnLog = io.MultiWriter(f, os.Stdout)
-		errorLog = io.MultiWriter(f, os.Stderr)
-	} else {
-		infoLog = os.Stdout
-		warnLog = os.Stdout
-		errorLog = os.Stderr
-	}
-
+func init() {
 	go func() {
 		c := make(chan string)
 		logIDService = c
@@ -103,9 +53,34 @@ func InitalizeLogger(logdir string) error {
 			c <- idsource.MustGenerate()
 		}
 	}()
+}
 
-	loggerInitted = true
-	return nil
+// DefaultLoggerConfig is a simple global logger config that is used for NewMasterLogger and NewSessionLogger.
+var DefaultLoggerConfig = &LoggerConfig{}
+
+// CreateLogFile is a simple helper function for making log files. logdir should be a path to the directory you
+// want your log files to be placed in. If this path does not exist it will be created.
+func CreateLogFile(logdir string) (*os.File, error) {
+	err := os.MkdirAll(logdir, 0775)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Create(logdir + "/" + time.Now().UTC().Format("m01-d02-t150405") + ".log")
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
+}
+
+// MustCreateLogFile is just CreateLogFile that panics on error.
+func MustCreateLogFile(logdir string) *os.File {
+	f, err := CreateLogFile(logdir)
+	if err != nil {
+		panic("Log file creation failed. *shrug* Guess I'll die.\n" + err.Error())
+	}
+	return f
 }
 
 // Logger is a logger instance. Possibly with a prefix and unique instance ID.
@@ -116,19 +91,32 @@ type Logger struct {
 
 // NewMasterLogger creates a new Logger without prefix or instance ID.
 func NewMasterLogger() *Logger {
-	return newLogger("")
+	return DefaultLoggerConfig.NewMasterLogger()
 }
 
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func NewSessionLogger(endpoint string) *Logger {
-	return newLogger("@" + endpoint + ":" + <-logIDService)
+	return DefaultLoggerConfig.NewSessionLogger(endpoint)
 }
 
-func newLogger(prefix string) *Logger {
+// NewMasterLogger creates a new Logger without prefix or instance ID.
+func (lc *LoggerConfig) NewMasterLogger() *Logger {
+	return lc.newLogger("")
+}
+
+// NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
+// ID individual to that particular Logger.
+func (lc *LoggerConfig) NewSessionLogger(endpoint string) *Logger {
+	log := lc.newLogger("@" + endpoint + ":" + <-logIDService)
+	log.I.Println("")
+	return log
+}
+
+func (lc *LoggerConfig) newLogger(prefix string) *Logger {
 	return &Logger{
-		I: log.New(infoLog, "INFO"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
-		W: log.New(warnLog, "WARN"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
-		E: log.New(errorLog, " ERR"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
+		I: log.New(lc.GetWriter(Info), "INFO"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
+		W: log.New(lc.GetWriter(Warn), "WARN"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
+		E: log.New(lc.GetWriter(Err), " ERR"+prefix+": ", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 }
