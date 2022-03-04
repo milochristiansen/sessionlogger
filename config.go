@@ -81,5 +81,8 @@ func (lc *LoggerConfig) GetWriter(l logLevel) io.Writer {
 	if lc.Disabled[l] {
 		return ioutil.Discard
 	}
+	if lc.Writers[l] == nil {
+		return defaultWriters[l]
+	}
 	return lc.Writers[l]
 }
