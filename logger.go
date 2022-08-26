@@ -87,6 +87,9 @@ func MustCreateLogFile(logdir string) *os.File {
 type Logger struct {
 	// Info, Warning, and Error log levels.
 	I, W, E *log.Logger
+
+	// The unique ID string for this logger, or the string "MASTER" for a master logger.
+	ID string
 }
 
 // NewMasterLogger creates a new Logger without prefix or instance ID.
@@ -102,13 +105,17 @@ func NewSessionLogger(endpoint string) *Logger {
 
 // NewMasterLogger creates a new Logger without prefix or instance ID.
 func (lc *Config) NewMasterLogger() *Logger {
-	return lc.newLogger("")
+	log := lc.newLogger("")
+	log.ID = "MASTER"
+	return log
 }
 
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func (lc *Config) NewSessionLogger(endpoint string) *Logger {
-	log := lc.newLogger("@" + endpoint + ":" + <-logIDService)
+	id := <-logIDService
+	log := lc.newLogger("@" + endpoint + ":" + id)
+	log.ID = id
 	log.I.Println("")
 	return log
 }
