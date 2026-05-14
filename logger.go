@@ -35,7 +35,6 @@ misrepresented as being the original software.
 package sessionlogger
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
