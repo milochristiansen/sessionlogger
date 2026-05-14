@@ -47,15 +47,15 @@ var logIDService <-chan string
 
 func init() {
 	go func() {
-		c := make(chan string, 1)
+		c := make(chan string)
 		logIDService = c
 
 		idsource := shortid.MustNew(16, shortid.DefaultABC, uint64(time.Now().UnixNano()))
 
 		for {
-			fmt.Println("Before ID")
+			fmt.Println("Before send ID")
 			c <- idsource.MustGenerate()
-			fmt.Println("After ID")
+			fmt.Println("After send ID")
 		}
 	}()
 }
@@ -118,7 +118,9 @@ func (lc *Config) NewMasterLogger() *Logger {
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func (lc *Config) NewSessionLogger(endpoint string) *Logger {
+	fmt.Println("Before rec ID")
 	id := <-logIDService
+	fmt.Println("After rec ID")
 	log := lc.newLogger("@" + endpoint + ":" + id)
 	log.ID = id
 	log.I.Println("Session Logger created.")
