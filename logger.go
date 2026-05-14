@@ -53,6 +53,7 @@ func init() {
 		idsource := shortid.MustNew(16, shortid.DefaultABC, uint64(time.Now().UnixNano()))
 
 		for {
+			fmt.Println("Priming ID")
 			c <- idsource.MustGenerate()
 		}
 	}()
@@ -116,9 +117,7 @@ func (lc *Config) NewMasterLogger() *Logger {
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func (lc *Config) NewSessionLogger(endpoint string) *Logger {
-	fmt.Println("Before ID")
 	id := <-logIDService
-	fmt.Println("After ID")
 	log := lc.newLogger("@" + endpoint + ":" + id)
 	log.ID = id
 	log.I.Println("Session Logger created.")
