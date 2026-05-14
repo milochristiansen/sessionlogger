@@ -47,14 +47,15 @@ var logIDService <-chan string
 
 func init() {
 	go func() {
-		c := make(chan string)
+		c := make(chan string, 1)
 		logIDService = c
 
 		idsource := shortid.MustNew(16, shortid.DefaultABC, uint64(time.Now().UnixNano()))
 
 		for {
-			fmt.Println("Priming ID")
+			fmt.Println("Before ID")
 			c <- idsource.MustGenerate()
+			fmt.Println("After ID")
 		}
 	}()
 }
