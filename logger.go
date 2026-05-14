@@ -34,11 +34,14 @@ misrepresented as being the original software.
 // size outside of creating a new one every time the program is started.
 package sessionlogger
 
-import "os"
-import "log"
-import "time"
+import (
+	"fmt"
+	"log"
+	"os"
+	"time"
 
-import "github.com/teris-io/shortid"
+	"github.com/teris-io/shortid"
+)
 
 var logIDService <-chan string
 
@@ -113,10 +116,12 @@ func (lc *Config) NewMasterLogger() *Logger {
 // NewSessionLogger creates a Logger that prefixes messages with the endpoint being logged and a unique
 // ID individual to that particular Logger.
 func (lc *Config) NewSessionLogger(endpoint string) *Logger {
+	fmt.Println("Before ID")
 	id := <-logIDService
+	fmt.Println("After ID")
 	log := lc.newLogger("@" + endpoint + ":" + id)
 	log.ID = id
-	log.I.Println("")
+	log.I.Println("Session Logger created.")
 	return log
 }
 
